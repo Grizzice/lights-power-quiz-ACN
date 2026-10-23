@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#46178f">
+<title>Join the quiz</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  body { height: 100vh; height: 100dvh; font-size: 16px; color: #fff; transition: background .3s; }
+  body.join { background: var(--purple); }
+  body.join::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background: radial-gradient(circle at 12% 18%, rgba(255,255,255,.07) 0 9rem, transparent 9rem),
+                radial-gradient(circle at 92% 85%, rgba(255,255,255,.06) 0 12rem, transparent 12rem); }
+  body.good { background: var(--good); } body.bad { background: var(--bad); }
+  #app { height: 100%; }
+
+  .joinwrap { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.6rem; padding: 1.2rem; }
+  .logo { font-weight: 900; font-size: clamp(2rem, 9vw, 3.4rem); text-align: center; line-height: 1.05; text-shadow: 0 3px 0 rgba(0,0,0,.25); }
+  .logo small { display: block; font-size: .4em; font-weight: 700; opacity: .8; margin-top: .5rem; text-shadow: none; }
+  .card { background: #fff; border-radius: 6px; padding: 1rem; width: min(20rem, 100%); display: flex; flex-direction: column; gap: .7rem; box-shadow: 0 4px 0 rgba(0,0,0,.2); }
+  .card input { border: 2px solid #ccc; border-radius: 4px; padding: .7rem; font-size: 1.15rem; font-weight: 800; text-align: center; color: var(--ink); outline: none; }
+  .card input:focus { border-color: var(--ink); }
+  .card .btn { font-size: 1.15rem; padding: .75rem; }
+  .err { color: var(--bad); font-weight: 700; font-size: .9rem; text-align: center; min-height: 1.1em; }
+  .err:empty { display: none; }
+
+  .screen { height: 100%; display: flex; flex-direction: column; }
+  .top { display: flex; justify-content: space-between; align-items: center; padding: .7rem .9rem; background: rgba(255,255,255,.95); color: var(--ink); font-weight: 800; }
+  .clock { background: var(--violet); color: #fff; border-radius: 999px; min-width: 2.6rem; height: 2.6rem; display: grid; place-items: center; font-size: 1.2rem; }
+  .bodyc { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 1rem; padding: 1.2rem; }
+  .bot { display: flex; justify-content: space-between; align-items: center; padding: .65rem .9rem; background: #fff; color: var(--ink); font-weight: 800; padding-bottom: max(.65rem, env(safe-area-inset-bottom)); }
+  .bot .sc { background: var(--ink); color: #fff; border-radius: 4px; padding: .25rem .8rem; }
+  h1 { font-size: clamp(1.8rem, 8vw, 2.6rem); font-weight: 900; text-shadow: 0 3px 0 rgba(0,0,0,.2); }
+  h2 { font-size: 1.5rem; font-weight: 800; }
+  .sub { font-weight: 700; font-size: 1.1rem; opacity: .95; }
+  .qcard { background: #fff; color: var(--ink); border-radius: 6px; padding: 1.1rem 1.2rem; font-weight: 800; font-size: 1.25rem; max-width: 34rem; box-shadow: 0 4px 0 rgba(0,0,0,.15); line-height: 1.3; animation: pop .45s both; }
+  .qsmall { background: #fff; color: var(--ink); text-align: center; font-weight: 700; font-size: 1rem; padding: .7rem 1rem; line-height: 1.3; border-top: 1px solid #ddd; }
+  .bigname { background: #fff; color: var(--ink); font-weight: 900; font-size: 1.6rem; padding: .5rem 1.4rem; border-radius: 6px; animation: pop .45s both; }
+  .spinner { width: 3.2rem; height: 3.2rem; border: .4rem solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
+  .progress { width: min(22rem, 80%); height: .6rem; background: rgba(255,255,255,.3); border-radius: 999px; overflow: hidden; }
+  .progress > div { height: 100%; background: #fff; width: 0; animation: grow linear forwards; }
+
+  .answers { flex: 1; min-height: 0; display: grid; grid-template: 1fr 1fr / 1fr 1fr; gap: .5rem; padding: .5rem; }
+  .answers .tile { flex-direction: column; justify-content: center; gap: .6rem; font-size: clamp(.95rem, 2.2vh, 1.4rem); text-align: center; border-radius: 6px; }
+  .answers .tile .shape { width: clamp(2.2rem, 9vh, 4.5rem); height: clamp(2.2rem, 9vh, 4.5rem); }
+  .answers .tile .txt { flex: none; }
+  .answers .tile:active { transform: scale(.97); }
+  .locked { width: 6rem; height: 6rem; border-radius: 8px; display: grid; place-items: center; animation: pop .4s both; box-shadow: inset 0 -.35rem 0 rgba(0,0,0,.18); }
+  .locked .shape { width: 3.2rem; height: 3.2rem; }
+
+  .verdict { width: 6.5rem; height: 6.5rem; border-radius: 50%; background: #fff; display: grid; place-items: center; animation: pop .5s both; }
+  .verdict svg { width: 70%; height: 70%; }
+  .good .verdict { color: var(--good); } .bad .verdict { color: var(--bad); }
+  .pts { background: rgba(0,0,0,.28); font-weight: 900; font-size: 1.6rem; padding: .5rem 1.6rem; border-radius: 6px; animation: rise .5s .25s both; }
+  .streakpill { background: rgba(0,0,0,.2); border-radius: 999px; padding: .3rem 1rem; font-weight: 800; animation: rise .5s .15s both; }
+  .standing { font-weight: 800; font-size: 1.15rem; animation: rise .5s .4s both; }
+  .medal { font-size: 5rem; line-height: 1; animation: pop .6s both; }
+  .stat { background: rgba(0,0,0,.25); border-radius: 6px; padding: .8rem 1.4rem; font-weight: 800; display: flex; gap: 1.6rem; }
+  .stat b { display: block; font-size: 1.6rem; }
+</style>
+</head>
+<body class="join">
+<div id="app"></div>
+<script src="/common.js"></script>
+<script>
+const app = $('#app');
+let P = JSON.parse(sessionStorage.getItem('quiz.player') || 'null');
+let TITLE = 'Quiz', V = null, sending = false;
+
+function save(p) { P = p; p ? sessionStorage.setItem('quiz.player', JSON.stringify(p)) : sessionStorage.removeItem('quiz.player'); }
+function setBg(cls) { document.body.className = cls; }
+
+async function boot() {
+  try { TITLE = (await api('/api/info')).title || TITLE; } catch {}
+  document.title = TITLE;
+  const urlPin = (new URLSearchParams(location.search).get('pin') || '').replace(/\D/g, '');
+  if (P && (!urlPin || urlPin === P.pin)) return live();
+  if (urlPin) return checkPin(urlPin);
+  pinScreen();
+}
+
+function pinScreen(msg = '', pin = '') {
+  Poll.stop(); setBg('join');
+  app.innerHTML = `<div class="joinwrap">
+    <div class="logo">${esc(TITLE)}<small>Enter the PIN on the big screen</small></div>
+    <form class="card" id="f" autocomplete="off">
+      <input id="pin" inputmode="numeric" pattern="[0-9 ]*" maxlength="7" placeholder="Game PIN" value="${esc(pin)}" aria-label="Game PIN">
+      <button class="btn dark">Enter</button>
+      <div class="err" id="err">${esc(msg)}</div>
+    </form></div>`;
+  $('#f').onsubmit = e => { e.preventDefault(); const p = $('#pin').value.replace(/\D/g, ''); if (p) checkPin(p); };
+}
+async function checkPin(pin) {
+  try {
+    const r = await api('/api/check?pin=' + pin);
+    if (r.ok) return nameScreen(pin);
+    pinScreen("We didn't recognise that game PIN. Please check and try again.", pin);
+  } catch (e) { pinScreen(e.message, pin); }
+}
+function nameScreen(pin, msg = '') {
+  setBg('join');
+  app.innerHTML = `<div class="joinwrap">
+    <div class="logo">${esc(TITLE)}<small>Game PIN ${esc(pin)}</small></div>
+    <form class="card" id="f" autocomplete="off">
+      <input id="nm" maxlength="16" placeholder="Nickname" aria-label="Nickname" autocapitalize="words">
+      <button class="btn dark" id="go">OK, go!</button>
+      <div class="err" id="err">${esc(msg)}</div>
+    </form></div>`;
+  $('#nm').focus();
+  $('#f').onsubmit = async e => {
+    e.preventDefault();
+    const name = $('#nm').value.trim(); if (!name) return;
+    $('#go').disabled = true;
+    try { const r = await api('/api/join', { pin, name }); save({ pin, token: r.token, name: r.name }); live(); }
+    catch (err) { $('#err').textContent = err.message; $('#go').disabled = false; }
+  };
+}
+
+function live() {
+  setBg('theme');
+  app.innerHTML = `<div class="screen"><div class="bodyc"><div class="spinner"></div></div></div>`;
+  Poll.start(() => P, onView);
+}
+
+function onView(v) {
+  if (v.phase === 'gone' || v.phase === 'unknown') { save(null); return pinScreen(v.phase === 'gone' ? 'That game has ended. Enter a new PIN to play again.' : ''); }
+  if (v.phase === 'kicked') { save(null); return pinScreen('The host removed you from the game.'); }
+  V = v; R[v.phase](v);
+}
+
+const bot = v => `<div class="bot"><span>${esc(v.name)}</span><span class="sc">${fmt(v.score)}</span></div>`;
+const topbar = v => `<div class="top"><span>${v.qi + 1} of ${v.total}</span>${v.phase === 'question' ? `<span class="clock" id="clk">${Timer.secs()}</span>` : '<span>' + esc(v.title) + '</span>'}</div>`;
+const behind = v => !v.ahead ? '' : v.ahead.gap ? `${fmt(v.ahead.gap)} points behind ${esc(v.ahead.name)}` : `tied with ${esc(v.ahead.name)}`;
+const standing = v => {
+  if (v.players < 2) return '';
+  if (v.place === 1) return v.ahead ? `You're in 1st place, ${behind(v)}` : "You're in 1st place!";
+  if (v.place <= 3 && v.players > 3) return `You're on the podium! ${behind(v)}`;
+  return `You're ${ordinal(v.place)}, ${behind(v)}`;
+};
+
+const R = {
+  lobby(v) {
+    setBg('theme');
+    app.innerHTML = `<div class="screen"><div class="bodyc">
+      <h1>You're in!</h1><div class="sub">See your nickname on screen?</div><div class="bigname">${esc(v.name)}</div>
+      <div class="sub" style="opacity:.8;margin-top:1rem">Waiting for the host to start…</div>
+    </div>${bot(v)}</div>`;
+  },
+  intro(v) {
+    setBg('theme');
+    app.innerHTML = `<div class="screen">${topbar(v)}<div class="bodyc">
+      <h2>Question ${v.qi + 1}</h2><div class="qcard">${esc(v.q.text)}</div>
+      <div class="progress"><div style="animation-duration:${Timer.left()}ms"></div></div><div class="sub">Get ready…</div>
+    </div>${bot(v)}</div>`;
+  },
+  question(v) {
+    setBg('theme');
+    if (v.answered) {
+      app.innerHTML = `<div class="screen">${topbar(v)}<div class="bodyc">
+        <div class="locked c${v.choice}"><span class="shape">${SHAPES[v.choice]}</span></div>
+        <h1>Answer locked in!</h1><div class="sub">Waiting for everyone else…</div><div class="spinner"></div>
+      </div>${bot(v)}</div>`;
+      return;
+    }
+    app.innerHTML = `<div class="screen">${topbar(v)}<div class="qsmall">${esc(v.q.text)}</div>
+      <div class="answers">${v.q.answers.map((a, i) => `<button class="tile c${i}" data-i="${i}"><span class="shape">${SHAPES[i]}</span><span class="txt">${esc(a)}</span></button>`).join('')}</div>
+      ${bot(v)}</div>`;
+    app.querySelectorAll('.answers .tile').forEach(b => b.onclick = () => answer(+b.dataset.i));
+  },
+  reveal(v) {
+    const r = v.last;
+    if (!r) { setBg('theme'); app.innerHTML = `<div class="screen">${topbar(v)}<div class="bodyc"><h1>Get ready</h1><div class="sub">You'll play from the next question</div></div>${bot(v)}</div>`; return; }
+    setBg(r.correct ? 'good' : 'bad');
+    if (navigator.vibrate) navigator.vibrate(r.correct ? 60 : [40, 60, 40]);
+    app.innerHTML = `<div class="screen">${topbar(v)}<div class="bodyc">
+      <h1>${r.correct ? 'Correct' : r.answered ? 'Incorrect' : "Time's up"}</h1>
+      <div class="verdict">${r.correct ? TICK : CROSS}</div>
+      ${r.correct && r.streak >= 2 ? `<div class="streakpill">Answer streak 🔥 ${r.streak}</div>` : ''}
+      <div class="pts">+ ${fmt(r.points)}</div>
+      <div class="standing">${standing(v)}</div>
+    </div>${bot(v)}</div>`;
+  },
+  scoreboard(v) {
+    setBg('theme');
+    app.innerHTML = `<div class="screen">${topbar(v)}<div class="bodyc">
+      <h1>You're in ${ordinal(v.place)} place</h1>
+      <div class="sub">${v.ahead ? (v.ahead.gap ? `${fmt(v.ahead.gap)} points behind ${esc(v.ahead.name)}` : `Tied with ${esc(v.ahead.name)}`) : v.players > 1 ? 'Out in front, keep it up!' : ''}</div>
+      <div class="sub" style="opacity:.8">Look at the big screen</div>
+    </div>${bot(v)}</div>`;
+  },
+  podium(v) {
+    setBg('theme');
+    const medal = ['🥇', '🥈', '🥉'][v.place - 1];
+    app.innerHTML = `<div class="screen"><div class="bodyc">
+      ${medal ? `<div class="medal">${medal}</div>` : ''}
+      <h1>${v.place <= 3 ? `You finished ${ordinal(v.place)}!` : `You finished ${ordinal(v.place)}`}</h1>
+      <div class="sub">out of ${v.players} player${v.players === 1 ? '' : 's'}</div>
+      <div class="stat"><div><b>${fmt(v.score)}</b>points</div><div><b>${v.correct}/${v.total}</b>correct</div></div>
+      <div class="sub" style="opacity:.85">Thanks for playing!</div>
+    </div>${bot(v)}</div>`;
+  },
+};
+
+async function answer(i) {
+  if (sending || !V || V.phase !== 'question' || V.answered) return;
+  sending = true;
+  if (navigator.vibrate) navigator.vibrate(25);
+  const qi = V.qi;
+  R.question({ ...V, answered: true, choice: i });
+  V = { ...V, answered: true, choice: i };
+  try { await api('/api/answer', { pin: P.pin, token: P.token, qi, choice: i }); } catch {}
+  sending = false;
+}
+
+setInterval(() => { const c = $('#clk'); if (c) c.textContent = Timer.secs(); }, 200);
+boot();
+</script>
+</body>
+</html>

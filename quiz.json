@@ -1,0 +1,97 @@
+{
+  "title": "Lights & Power Quiz",
+  "seconds_per_question": 10,
+  "intro_seconds": 4,
+  "questions": [
+    {
+      "q": "What does SCADA stand for?",
+      "image": "q01.jpg",
+      "answers": ["Supervisory Control and Data Acquisition", "Secure Control and Data Analytics", "System Control and Distribution Automation", "Substation Control and Demand Allocation"],
+      "correct": [0]
+    },
+    {
+      "q": "Most power grids worldwide run at one of which two frequencies?",
+      "image": "q02.jpg",
+      "answers": ["25 or 35 Hz", "220 or 240 Hz", "50 or 60 Hz", "100 or 120 Hz"],
+      "correct": [2]
+    },
+    {
+      "q": "What unit is used to bill household electricity used?",
+      "image": "q03.jpg",
+      "answers": ["Kilowatt-hour (kWh)", "Volt (V)", "Kilowatt (kW)", "Ampere (A)"],
+      "correct": [0]
+    },
+    {
+      "q": "What does \"duck curve\" describe?",
+      "image": "q04.jpg",
+      "answers": ["Wind output dropping on calm days", "Seasonal swings in gas prices", "Power demand rising during heatwaves", "Net demand dips at midday from solar, surges at dusk"],
+      "correct": [3]
+    },
+    {
+      "q": "Which device steps voltage up or down on the power grid?",
+      "image": "q05.jpg",
+      "answers": ["Inverter", "Capacitor", "Transformer", "Circuit breaker"],
+      "correct": [2]
+    },
+    {
+      "q": "What is a “black start”?",
+      "image": "q06.jpg",
+      "answers": ["Restarting a dead grid without outside power", "Switching on a new coal plant", "A planned overnight outage", "A cyberattack that shuts the grid"],
+      "correct": [0]
+    },
+    {
+      "q": "What is the very first step in the Meter-to-Cash (M2C) lifecycle?",
+      "image": "q07.jpg",
+      "answers": ["Printing the bill", "Measuring energy or water usage at the customer's property", "Depositing a check", "Sending late notice"],
+      "correct": [1]
+    },
+    {
+      "q": "Why is electricity sent over long distances at very high voltage?",
+      "image": "q08.jpg",
+      "answers": ["Meters read more accurately", "Electricity travels faster", "It is safer for the public", "It reduces energy losses"],
+      "correct": [3]
+    },
+    {
+      "q": "In water utilities, what is “non-revenue water”?",
+      "image": "q09.jpg",
+      "answers": ["Recycled wastewater sold to industry", "Water lost or unbilled, e.g. leaks and theft", "Rainwater collected by households", "Water held in reserve for droughts"],
+      "correct": [1]
+    },
+    {
+      "q": "Which software system is responsible for storing, validating, and analyzing data before it hits the billing engine?",
+      "image": "q10.jpg",
+      "answers": ["CRM", "GIS", "MDMS", "CIS"],
+      "correct": [2]
+    },
+    {
+      "q": "The “energy trilemma” balances energy security, sustainability and...?",
+      "image": "q11.jpg",
+      "answers": ["Velocity", "Profitability", "Affordability", "Innovation"],
+      "correct": [2]
+    },
+    {
+      "q": "What are the small clay oil lamps lit during Diwali called?",
+      "image": "q12.jpg",
+      "answers": ["Rangoli", "Diyas", "Mehndi", "Torans"],
+      "correct": [1]
+    },
+    {
+      "q": "Diwali is popularly known as the Festival of...?",
+      "image": "q13.jpg",
+      "answers": ["Colours", "Lights", "Harvest", "Gods"],
+      "correct": [1]
+    },
+    {
+      "q": "What are the colourful floor patterns made with powder, rice or petals called?",
+      "image": "q14.jpg",
+      "answers": ["Mehndi", "Mandala", "Rangoli", "Batik"],
+      "correct": [2]
+    },
+    {
+      "q": "Diwali always occurs on?",
+      "image": "q15.jpg",
+      "answers": ["Full Moon Night", "No Moon Night", "Last Quarter Moon Night", "First Quarter Moon Night"],
+      "correct": [1]
+    }
+  ]
+}

@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz host</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  html { font-size: clamp(9px, min(1.05vw, 1.9vh), 28px); }
+  body { color: #fff; }
+  #app { height: 100vh; }
+
+  /* lobby */
+  .lobby { height: 100vh; display: flex; flex-direction: column; }
+  .joinbar { display: flex; justify-content: center; align-items: stretch; gap: .6rem; padding: 1.4rem 1rem 0; }
+  .joinbox { background: #fff; color: var(--ink); border-radius: 6px; padding: .9rem 1.8rem; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+  .joinbox .lbl { font-weight: 700; font-size: 1.5rem; }
+  .joinbox .url { font-weight: 900; font-size: 2.6rem; white-space: nowrap; line-height: 1.15; }
+  .pinbox .pin { font-weight: 900; font-size: 6rem; letter-spacing: .04em; line-height: 1; }
+  .qrbox { background: #fff; border-radius: 6px; padding: .4rem; display: flex; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+  .qrbox img { height: 11rem; width: 11rem; }
+  .warn { margin: .8rem auto 0; background: #fff3cd; color: #6b4e00; font-weight: 700; padding: .6rem 1.2rem; border-radius: 6px; font-size: 1.2rem; max-width: 70rem; text-align: center; }
+  .lobbymid { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 1.6rem 2rem .6rem; }
+  .count { justify-self: start; background: rgba(0,0,0,.35); border-radius: 6px; padding: .5rem 1.1rem; font-weight: 800; font-size: 1.7rem; }
+  .title { font-weight: 900; font-size: 3.4rem; text-align: center; text-shadow: 0 3px 0 rgba(0,0,0,.2); }
+  .lobbymid .btn { justify-self: end; font-size: 1.7rem; }
+  .names { flex: 1; display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: .9rem; padding: 1.2rem 3rem 3rem; overflow: auto; }
+  .chip { background: #fff; color: var(--ink); font-weight: 800; font-size: 1.7rem; padding: .5rem 1.3rem; border-radius: 6px; cursor: pointer; animation: pop .35s both; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+  .chip:hover { text-decoration: line-through; }
+  .waiting { margin: 2rem auto; background: rgba(0,0,0,.3); padding: 1rem 2.2rem; border-radius: 6px; font-weight: 800; font-size: 2rem; }
+
+  /* get ready */
+  .intro { height: calc(100vh - 3.2rem); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2rem; }
+  .qnum { background: #fff; color: var(--ink); border-radius: 999px; padding: .4rem 1.6rem; font-weight: 800; font-size: 1.6rem; }
+  .intro .qtext { background: #fff; color: var(--ink); padding: 2.4rem 3rem; font-size: 3.4rem; font-weight: 800; width: min(78rem, 88vw); text-align: center; border-radius: 6px; box-shadow: 0 6px 0 rgba(0,0,0,.15); animation: pop .5s both; line-height: 1.25; }
+  .progress { width: min(78rem, 88vw); height: .9rem; background: rgba(255,255,255,.3); border-radius: 999px; overflow: hidden; }
+  .progress > div { height: 100%; background: #fff; width: 0; animation: grow linear forwards; }
+
+  /* question and reveal */
+  .game { height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 1rem; padding: 1.2rem 1.2rem 0; }
+  .qbar { background: #fff; color: var(--ink); border-radius: 4px; box-shadow: 0 4px 0 rgba(0,0,0,.12); padding: .9rem 2rem; text-align: center; font-weight: 700; font-size: 2.4rem; line-height: 1.25; }
+  .mid { display: grid; grid-template-columns: 1fr minmax(0, 3.2fr) 1fr; align-items: center; min-height: 0; }
+  .media { height: 100%; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  .media img { height: 100%; width: auto; max-width: 100%; object-fit: contain; border-radius: 4px; box-shadow: 0 4px 14px rgba(0,0,0,.25); animation: pop .45s both; }
+  .timer { justify-self: center; width: 8rem; height: 8rem; border-radius: 50%; background: var(--violet); font-weight: 800; font-size: 3.6rem; display: grid; place-items: center; box-shadow: 0 4px 0 rgba(0,0,0,.2); }
+  .timer.low { animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { transform: scale(1.08); } }
+  .side { justify-self: center; text-align: center; display: flex; flex-direction: column; align-items: center; gap: .3rem; }
+  .ansnum { font-weight: 800; font-size: 4rem; line-height: 1; }
+  .anslbl { font-weight: 700; font-size: 1.6rem; margin-bottom: 1rem; }
+  .side .btn { font-size: 1.5rem; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+  .tiles .tile { min-height: 7rem; font-size: 1.9rem; }
+  .foot { display: flex; justify-content: space-between; align-items: center; background: #fff; color: var(--ink); font-weight: 800; font-size: 1.3rem; padding: .55rem 1.4rem; margin: 0 -1.2rem; }
+  body > .foot { position: fixed; left: 0; right: 0; bottom: 0; margin: 0; }
+
+  .chart { height: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 1.4rem; padding: 0 1rem .2rem; }
+  .col { width: 9.5rem; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; }
+  .col .bar { height: 0; border-radius: 3px 3px 0 0; transition: height .9s cubic-bezier(.2,.8,.2,1); box-shadow: inset 0 -3px 0 rgba(0,0,0,.12); }
+  .col .base { display: flex; align-items: center; justify-content: center; gap: .5rem; padding: .5rem; margin-top: .25rem; border-radius: 3px; font-weight: 800; font-size: 2rem; }
+  .col .base .shape { width: 1.6rem; height: 1.6rem; }
+  .col .base i { width: 1.8rem; height: 1.8rem; display: inline-flex; }
+  .col.wrong { opacity: .35; }
+  .bar.c0, .bar.c1, .bar.c2, .bar.c3 { }
+
+  /* scoreboard */
+  .board { height: calc(100vh - 3.2rem); display: flex; flex-direction: column; align-items: center; padding-top: 2.6rem; }
+  .boardtitle { background: #fff; color: var(--ink); padding: .8rem 3.4rem; font-size: 2.8rem; font-weight: 800; border-radius: 4px; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+  .rows { width: min(66rem, 82vw); margin-top: 2.6rem; display: flex; flex-direction: column; gap: .9rem; }
+  .row { background: #fff; color: var(--ink); display: flex; justify-content: space-between; align-items: center; padding: 1.1rem 1.8rem; font-size: 2.1rem; font-weight: 800; border-radius: 4px; animation: rise .5s both; box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+  .row:first-child { background: var(--violet); color: #fff; }
+  .streak { font-style: normal; font-size: 1.4rem; margin-left: .8rem; background: rgba(0,0,0,.08); padding: .1rem .6rem; border-radius: 999px; }
+  .topright { position: fixed; top: 1.2rem; right: 1.2rem; font-size: 1.6rem; }
+
+  /* podium */
+  .podium { height: 100vh; display: flex; flex-direction: column; align-items: center; padding-top: 1.6rem; }
+  .ptitle { background: #fff; color: var(--ink); padding: .7rem 2.6rem; font-size: 2.4rem; font-weight: 800; border-radius: 4px; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+  .stands { flex: 1; display: flex; align-items: flex-end; justify-content: center; gap: 1rem; width: 100%; }
+  .stand { width: 19rem; display: flex; flex-direction: column; align-items: center; }
+  .stand .who { font-weight: 900; font-size: 2.4rem; background: #fff; color: var(--ink); padding: .5rem 1.4rem; border-radius: 6px; margin-bottom: 1rem; opacity: 0; transform: translateY(1.5rem) scale(.8); transition: all .5s cubic-bezier(.2,1.4,.4,1); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stand .block { width: 100%; height: 0; overflow: hidden; background: var(--violet); border-radius: 6px 6px 0 0; display: flex; flex-direction: column; align-items: center; gap: .5rem; padding-top: 1.4rem; transition: height 1s cubic-bezier(.2,.8,.2,1); box-shadow: inset 0 -.5rem 0 rgba(0,0,0,.15); }
+  .stand.p1 .block { background: #6a2fb5; }
+  .stand.show .who { opacity: 1; transform: none; }
+  .stand.p1.show .block { height: 46vh; } .stand.p2.show .block { height: 35vh; } .stand.p3.show .block { height: 26vh; }
+  .medal { width: 5rem; height: 5rem; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 2.6rem; color: #fff; box-shadow: inset 0 -.35rem 0 rgba(0,0,0,.2); }
+  .m1 { background: #f5b800; } .m2 { background: #a7b1bd; } .m3 { background: #c47a3c; }
+  .ps { font-weight: 900; font-size: 2.2rem; }
+  .pc { font-weight: 700; font-size: 1.3rem; opacity: .85; }
+  .pactions { display: flex; gap: .8rem; padding: 1.2rem 0 1.6rem; font-size: 1.5rem; opacity: 0; transition: opacity .6s; }
+  .pactions.show { opacity: 1; }
+  .rest { position: fixed; right: 1.2rem; bottom: 1.2rem; background: rgba(0,0,0,.3); border-radius: 6px; padding: .8rem 1.2rem; font-size: 1.3rem; font-weight: 700; min-width: 16rem; opacity: 0; transition: opacity .6s; }
+  .rest.show { opacity: 1; }
+  .rest div { display: flex; justify-content: space-between; gap: 1.2rem; }
+
+  .tools { position: fixed; left: 5rem; bottom: .25rem; display: flex; gap: .4rem; z-index: 20; }
+  .tools button { width: 2.4rem; height: 2.4rem; border-radius: 50%; background: rgba(0,0,0,.35); color: #fff; font-size: 1.1rem; display: grid; place-items: center; }
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 30; }
+</style>
+</head>
+<body class="theme">
+<div id="app"></div>
+<div class="tools"><button id="snd" title="Sound on or off">🔊</button><button id="fs" title="Full screen">⛶</button></div>
+<canvas id="confetti"></canvas>
+<script src="/common.js"></script>
+<script>
+const app = $('#app');
+let S = JSON.parse(localStorage.getItem('quiz.host') || 'null');
+let INFO = {}, V = null, key = '', joinBase = '', timers = [];
+
+// ---------- sound (synthesised, so there are no audio files to licence) ----------
+const Sound = {
+  ctx: null, out: null, on: localStorage.getItem('quiz.sound') !== 'off', mode: null, loop: null, buf: null,
+  init() {
+    if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    this.ctx = new AC(); this.out = this.ctx.createGain(); this.out.gain.value = this.on ? .6 : 0; this.out.connect(this.ctx.destination);
+    const m = this.mode; this.mode = null; if (m) this.music(m);
+  },
+  toggle() { this.on = !this.on; localStorage.setItem('quiz.sound', this.on ? 'on' : 'off'); this.init(); if (this.out) this.out.gain.value = this.on ? .6 : 0; $('#snd').textContent = this.on ? '🔊' : '🔇'; },
+  hz: m => 440 * Math.pow(2, (m - 69) / 12),
+  tone(m, t, dur, type = 'triangle', vol = .1) {
+    const c = this.ctx, o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.value = this.hz(m);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(this.out); o.start(t); o.stop(t + dur + .03);
+  },
+  noise(t, vol = .03, dur = .05, freq = 7000, type = 'highpass') {
+    const c = this.ctx;
+    if (!this.buf) { const b = c.createBuffer(1, c.sampleRate * .5, c.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; this.buf = b; }
+    const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = this.buf; f.type = type; f.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(this.out); s.start(t); s.stop(t + dur + .03);
+  },
+  music(mode) {
+    if (mode === this.mode && (this.loop || !this.ctx)) return;
+    clearInterval(this.loop); this.loop = null; this.mode = mode;
+    if (!mode || !this.ctx) return;
+    const song = mode === 'question' ? { bpm: 152, chords: [[50, 0], [46, 1], [48, 1], [45, 1]] }
+                                     : { bpm: 112, chords: [[57, 0], [53, 1], [48, 1], [55, 1]] };
+    const step = 60 / song.bpm / 2; let n = 0, t = this.ctx.currentTime + .08;
+    this.loop = setInterval(() => { while (t < this.ctx.currentTime + .25) { this.beat(mode, song, n++, t, step); t += step; } }, 40);
+  },
+  beat(mode, song, n, t, step) {
+    const [root, major] = song.chords[Math.floor(n / 8) % song.chords.length], i = n % 8;
+    const arp = major ? [0, 4, 7, 12, 16, 12, 7, 4] : [0, 3, 7, 12, 15, 12, 7, 3];
+    if (mode === 'question') {
+      this.tone(root + 12 + (i % 2 ? 12 : 0) + (i >= 6 ? arp[i] : 0), t, step * .6, 'square', .028);
+      if (i % 2 === 0) this.tone(root - 12, t, step * 1.6, 'sawtooth', .04);
+      this.noise(t, i % 2 ? .015 : .03);
+      if (i === 4) this.noise(t, .05, .12, 1800, 'bandpass');
+    } else {
+      this.tone(root + 12 + arp[i], t, step * .9, 'triangle', .06);
+      if (i % 4 === 0) this.tone(root - 12, t, step * 3.5, 'sine', .14);
+      if (i % 2) this.noise(t, .02);
+    }
+  },
+  fx(name) {
+    if (!this.ctx) return; const t = this.ctx.currentTime + .02;
+    if (name === 'tick') this.tone(96, t, .06, 'square', .05);
+    if (name === 'pop') this.tone(84 + Math.floor(Math.random() * 5), t, .09, 'sine', .12);
+    if (name === 'whoosh') [72, 76, 79, 84].forEach((m, i) => this.tone(m, t + i * .06, .3, 'triangle', .07));
+    if (name === 'gong') [45, 52, 57, 61, 64].forEach(m => this.tone(m, t, 1.8, 'triangle', .09));
+    if (name === 'place') { this.tone(67, t, .25, 'triangle', .1); this.tone(74, t + .12, .4, 'triangle', .1); }
+    if (name === 'roll') for (let i = 0; i < 30; i++) this.noise(t + i * .05, .02 + i * .0025, .07, 1500, 'bandpass');
+    if (name === 'fanfare') {
+      [[60, 0], [64, .14], [67, .28], [72, .42], [67, .62], [72, .76]].forEach(([m, d]) => this.tone(m, t + d, .4, 'square', .05));
+      [60, 64, 67, 72].forEach(m => this.tone(m, t + .95, 1.6, 'triangle', .07));
+    }
+  },
+};
+$('#snd').textContent = Sound.on ? '🔊' : '🔇';
+$('#snd').onclick = e => { e.stopPropagation(); Sound.toggle(); };
+$('#fs').onclick = e => { e.stopPropagation(); document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.(); };
+addEventListener('pointerdown', () => Sound.init());
+
+// ---------- game session ----------
+async function boot() {
+  try { INFO = await api('/api/info'); } catch { INFO = {}; }
+  joinBase = (INFO.join_base || location.origin).replace(/\/$/, '');
+  (INFO.images || []).forEach(src => { new Image().src = '/img/' + src; });
+  if (S && !new URLSearchParams(location.search).has('new')) {
+    try {
+      const d = await api(`/api/state?pin=${S.pin}&token=${encodeURIComponent(S.token)}&etag=none`);
+      if (['gone', 'unknown'].includes(d.view?.phase)) S = null;
+    } catch { S = null; }
+  } else S = null;
+  if (S) Poll.start(() => S, onView); else newGame();
+}
+async function newGame() {
+  try { S = await api('/api/create', {}); }
+  catch (e) { toast(e.message); return setTimeout(newGame, 2000); }
+  localStorage.setItem('quiz.host', JSON.stringify(S));
+  history.replaceState(null, '', '/host');
+  key = ''; Poll.start(() => S, onView);
+}
+async function act(action, extra = {}) {
+  try { await api('/api/host', { pin: S.pin, token: S.token, action, ...extra }); }
+  catch (e) { toast(e.message); }
+}
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
+}
+const pinText = pin => pin.replace(/(\d{3})(\d{3})/, '$1 $2');
+const foot = v => `<div class="foot"><span>${v.qi + 1}/${v.total}</span><span>Join at ${esc(joinHost())} · Game PIN: ${pinText(v.pin)}</span></div>`;
+const joinHost = () => joinBase.replace(/^https?:\/\//, '');
+
+function onView(v) {
+  if (v.phase === 'gone' || v.phase === 'unknown') return newGame();
+  const base = (v.join || INFO.join_base || location.origin).replace(/\/$/, '');
+  if (base !== joinBase) { joinBase = base; key = ''; }   // the public link changed, redraw with it
+  const k = v.phase + ':' + v.qi, fresh = k !== key;
+  key = k; V = v;
+  if (fresh) {
+    timers.forEach(clearTimeout); timers = [];
+    document.querySelectorAll('body > .foot').forEach(f => f.remove());
+    R[v.phase](v); enter(v);
+  } else if (U[v.phase]) U[v.phase](v);
+}
+
+const R = {
+  lobby(v) {
+    const local = /^(localhost|127\.|\[::1\])/.test(joinHost());
+    const joinUrl = `${joinBase}/?pin=${v.pin}`;
+    app.innerHTML = `<div class="lobby lobbyfoot">
+      <div class="joinbar">
+        <div class="joinbox"><div class="lbl">Join at</div><div class="url" style="font-size:${Math.min(2.6, 48 / joinHost().length).toFixed(2)}rem">${esc(joinHost())}</div></div>
+        <div class="joinbox pinbox"><div class="lbl">Game PIN:</div><div class="pin">${pinText(v.pin)}</div></div>
+        <div class="qrbox"><img src="/api/qr.svg?data=${encodeURIComponent(joinUrl)}" alt="QR code to join" onerror="this.parentNode.remove()"></div>
+      </div>
+      ${local ? `<div class="warn">Rehearsal mode. This address only works on this computer, so open player tabs here. For the real game, open the host screen from your online link.</div>` : ''}
+      <div class="lobbymid">
+        <div class="count"><span id="pc">0</span> Players</div>
+        <div class="title">${esc(v.title)}</div>
+        <button class="btn" id="go">Start</button>
+      </div>
+      <div class="names" id="names"></div>
+    </div>`;
+    $('#go').onclick = () => { Sound.init(); act('next'); };
+    U.lobby(v);
+  },
+  intro(v) {
+    app.innerHTML = `<div class="intro">
+      <div class="qnum">Question ${v.qi + 1} of ${v.total}</div>
+      <div class="qtext">${esc(v.q.text)}</div>
+      <div class="progress"><div style="animation-duration:${Timer.left()}ms"></div></div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', foot(v));
+  },
+  question(v) {
+    app.innerHTML = `<div class="game">
+      <div class="qbar">${esc(v.q.text)}</div>
+      <div class="mid">
+        <div class="timer" id="tm">${Timer.secs()}</div>
+        <div class="media">${v.q.image ? `<img src="/img/${esc(v.q.image)}" alt="">` : ''}</div>
+        <div class="side"><div class="ansnum" id="an">${v.answered}</div><div class="anslbl">Answers</div><button class="btn" id="skip">Skip</button></div>
+      </div>
+      <div class="tiles">${v.q.answers.map((a, i) => `<div class="tile c${i}"><span class="shape">${SHAPES[i]}</span><span class="txt">${esc(a)}</span></div>`).join('')}</div>
+      ${foot(v)}
+    </div>`;
+    $('#skip').onclick = () => act('next');
+  },
+  reveal(v) {
+    const max = Math.max(1, ...v.dist);
+    app.innerHTML = `<div class="game">
+      <div class="qbar">${esc(v.q.text)}</div>
+      <div class="mid">
+        <div></div>
+        <div class="chart">${v.dist.map((n, i) => {
+          const ok = v.correct.includes(i);
+          return `<div class="col ${ok ? '' : 'wrong'}"><div class="bar c${i}" data-h="${n / max * 78}"></div>
+            <div class="base c${i}"><span class="shape">${SHAPES[i]}</span>${n}${ok ? `<i>${TICK}</i>` : ''}</div></div>`;
+        }).join('')}</div>
+        <div class="side"><button class="btn" id="next">Next</button></div>
+      </div>
+      <div class="tiles">${v.q.answers.map((a, i) => {
+        const ok = v.correct.includes(i);
+        return `<div class="tile c${i} ${ok ? '' : 'dim'}"><span class="shape">${SHAPES[i]}</span><span class="txt">${esc(a)}</span>${ok ? `<span class="mark">${TICK}</span>` : ''}</div>`;
+      }).join('')}</div>
+      ${foot(v)}
+    </div>`;
+    setTimeout(() => document.querySelectorAll('.bar').forEach(b => b.style.height = b.dataset.h + '%'), 60);
+    $('#next').onclick = () => act('next');
+  },
+  scoreboard(v) {
+    app.innerHTML = `<div class="board">
+      <div class="boardtitle">Scoreboard</div>
+      <div class="rows">${v.board.map((r, i) => `<div class="row" style="animation-delay:${i * .12}s">
+        <span>${esc(r.name)}${r.streak >= 2 ? `<em class="streak">🔥 ${r.streak}</em>` : ''}</span>
+        <span class="sc" data-from="${r.score - r.gain}" data-to="${r.score}">${fmt(r.score - r.gain)}</span></div>`).join('')}</div>
+      <button class="btn topright" id="next">Next</button>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', foot(v));
+    $('#next').onclick = () => act('next');
+    const t0 = performance.now();
+    const step = () => {
+      const k = Math.min(1, (performance.now() - t0 - 500) / 1000);
+      document.querySelectorAll('.sc').forEach(s => { const a = +s.dataset.from, b = +s.dataset.to; s.textContent = fmt(Math.round(a + (b - a) * Math.max(0, k))); });
+      if (k < 1) timers.push(setTimeout(step, 30));
+    };
+    step();
+  },
+  podium(v) {
+    const top = v.final.slice(0, 3), rest = v.final.slice(3, 10);
+    const stand = i => top[i] ? `<div class="stand p${i + 1}" id="st${i}">
+        <div class="who">${esc(top[i].name)}</div>
+        <div class="block"><div class="medal m${top[i].place}">${top[i].place}</div><div class="ps">${fmt(top[i].score)}</div><div class="pc">${top[i].correct} out of ${v.total}</div></div>
+      </div>` : '';
+    app.innerHTML = `<div class="podium">
+      <div class="ptitle">${esc(v.title)}</div>
+      <div class="stands">${stand(1)}${stand(0)}${stand(2)}</div>
+      <div class="pactions" id="pa">
+        <a class="btn" href="/api/results.csv?pin=${v.pin}&token=${encodeURIComponent(S.token)}">Download results</a>
+        <button class="btn" id="again">Play again, same players</button>
+        <button class="btn" id="newg">New game, new PIN</button>
+      </div>
+      ${rest.length ? `<div class="rest" id="rest">${rest.map(r => `<div><span>${r.place}. ${esc(r.name)}</span><span>${fmt(r.score)}</span></div>`).join('')}</div>` : ''}
+    </div>`;
+    $('#again').onclick = () => act('restart');
+    $('#newg').onclick = () => newGame();
+    const show = (id, ms, fx) => timers.push(setTimeout(() => { const el = $(id); if (el) el.classList.add('show'); if (fx) Sound.fx(fx); }, ms));
+    show('#st2', 600, 'place');
+    show('#st1', 2200, 'place');
+    timers.push(setTimeout(() => Sound.fx('roll'), 3400));
+    show('#st0', 5000, 'fanfare');
+    timers.push(setTimeout(() => $('#st0') && confetti(), 5000));
+    show('#pa', 6200); show('#rest', 6200);
+  },
+};
+
+const U = {
+  lobby(v) {
+    $('#pc').textContent = v.count;
+    $('#go').disabled = !v.count;
+    const box = $('#names');
+    const have = new Map([...box.querySelectorAll('.chip')].map(c => [c.dataset.n, c]));
+    v.players.forEach(n => {
+      if (!have.has(n)) {
+        const c = document.createElement('div');
+        c.className = 'chip'; c.dataset.n = n; c.textContent = n; c.title = 'Click to remove this player';
+        c.onclick = () => act('kick', { name: n });
+        box.appendChild(c); Sound.fx('pop');
+      }
+      have.delete(n);
+    });
+    have.forEach(c => c.remove());
+    const w = $('.waiting', box);
+    if (!v.count && !w) box.insertAdjacentHTML('afterbegin', '<div class="waiting">Waiting for players…</div>');
+    if (v.count && w) w.remove();
+  },
+  question(v) { $('#an').textContent = v.answered; },
+};
+
+function enter(v) {
+  if (v.phase === 'lobby' || v.phase === 'scoreboard') Sound.music('lobby');
+  if (v.phase === 'intro') { Sound.music(null); Sound.fx('whoosh'); }
+  if (v.phase === 'question') Sound.music('question');
+  if (v.phase === 'reveal') { Sound.music(null); Sound.fx('gong'); }
+  if (v.phase === 'podium') Sound.music(null);
+}
+
+let lastSec = 0;
+setInterval(() => {
+  if (V?.phase !== 'question') return;
+  const s = Timer.secs(), el = $('#tm');
+  if (!el) return;
+  el.textContent = s; el.classList.toggle('low', s <= 3);
+  if (s !== lastSec && s <= 5 && s > 0) Sound.fx('tick');
+  lastSec = s;
+}, 100);
+
+addEventListener('keydown', e => {
+  if (!['Space', 'Enter', 'ArrowRight'].includes(e.code)) return;
+  const b = $('#go') || $('#next') || $('#skip');
+  if (b && !b.disabled) { e.preventDefault(); b.click(); }
+});
+
+function confetti(ms = 6500) {
+  const cv = $('#confetti'), cx = cv.getContext('2d');
+  cv.width = innerWidth; cv.height = innerHeight;
+  const cols = ['#e21b3c', '#1368ce', '#d89e00', '#26890c', '#f5b800', '#ffffff', '#864cbf'];
+  const ps = Array.from({ length: 200 }, () => ({ x: Math.random() * cv.width, y: -20 - Math.random() * cv.height * .7,
+    w: 6 + Math.random() * 8, h: 8 + Math.random() * 10, vy: 2.2 + Math.random() * 3.2, vx: -1.5 + Math.random() * 3,
+    r: Math.random() * 6, vr: -.2 + Math.random() * .4, c: cols[Math.floor(Math.random() * cols.length)] }));
+  const t0 = Date.now();
+  (function frame() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    const done = Date.now() - t0 > ms; let alive = 0;
+    ps.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      if (p.y > cv.height + 20) { if (done) return; p.y = -20; p.x = Math.random() * cv.width; }
+      alive++; cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r); cx.fillStyle = p.c; cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); cx.restore();
+    });
+    if (alive) setTimeout(frame, 16); else cx.clearRect(0, 0, cv.width, cv.height);
+  })();
+}
+
+boot();
+</script>
+</body>
+</html>

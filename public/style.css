@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap');
+
+:root {
+  --red: #e21b3c; --blue: #1368ce; --yellow: #d89e00; --green: #26890c;
+  --purple: #46178f; --violet: #864cbf; --ink: #333; --good: #66bf39; --bad: #f35;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: Montserrat, "Segoe UI", Arial, sans-serif; color: var(--ink);
+  overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: none;
+}
+button, input { font: inherit; }
+button { cursor: pointer; border: 0; }
+
+/* Blue theme, like the Kahoot theme in the screenshots */
+.theme { background: #0545d2; position: relative; isolation: isolate; }
+.theme::before {
+  content: ""; position: fixed; inset: 0; z-index: -1;
+  background:
+    linear-gradient(112deg, transparent 0 16%, rgba(255,255,255,.07) 16% 31%, transparent 31%),
+    linear-gradient(248deg, rgba(40,190,255,.34) 0 24%, transparent 24%),
+    linear-gradient(68deg, transparent 0 72%, rgba(0,20,160,.35) 72%),
+    linear-gradient(160deg, #0032c8 0%, #0558db 40%, #0a74e0 68%, #0034c9 100%);
+}
+
+.c0 { background: var(--red); } .c1 { background: var(--blue); }
+.c2 { background: var(--yellow); } .c3 { background: var(--green); }
+
+.tile {
+  display: flex; align-items: center; gap: 1.1em; color: #fff; border-radius: 4px;
+  padding: .5em 1.1em; box-shadow: inset 0 -.32em 0 rgba(0,0,0,.18); font-weight: 600;
+  text-shadow: 0 1px 1px rgba(0,0,0,.15); transition: opacity .4s, transform .4s;
+}
+.tile .shape, .shape { width: 1.5em; height: 1.5em; flex: none; display: inline-flex; color: #fff; filter: drop-shadow(0 2px 0 rgba(0,0,0,.15)); }
+.tile .shape svg, .shape svg { width: 100%; height: 100%; }
+.tile .txt { flex: 1; line-height: 1.25; }
+.tile .mark { width: 1.9em; height: 1.9em; border-radius: 50%; background: #fff; color: var(--good); flex: none; display: grid; place-items: center; }
+.tile .mark svg { width: 70%; height: 70%; }
+.tile.dim { opacity: .3; }
+
+.btn {
+  background: #fff; color: var(--ink); font-weight: 800; border-radius: 4px; padding: .55em 1.3em;
+  box-shadow: inset 0 -.25em 0 rgba(0,0,0,.18); text-decoration: none; display: inline-block; line-height: 1.3;
+}
+.btn:hover { filter: brightness(.95); }
+.btn:active { transform: translateY(2px); box-shadow: inset 0 -.1em 0 rgba(0,0,0,.18); }
+.btn[disabled] { opacity: .55; cursor: default; }
+.btn.dark { background: var(--ink); color: #fff; }
+
+.conn {
+  position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 50; background: #000c;
+  color: #fff; padding: 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 700;
+}
+.toast {
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 50; background: #000d;
+  color: #fff; padding: 10px 18px; border-radius: 6px; font-weight: 600;
+}
+@keyframes pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes grow { from { width: 0; } to { width: 100%; } }
+@keyframes spin { to { transform: rotate(360deg); } }

@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: lights-power-quiz
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    healthCheckPath: /api/info
+    autoDeploy: true

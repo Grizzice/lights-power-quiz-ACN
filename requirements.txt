@@ -1,0 +1,1 @@
+# Nothing to install. The quiz uses only the Python standard library (the QR code library is in vendor/).
