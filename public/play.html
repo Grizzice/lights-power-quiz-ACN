@@ -66,7 +66,7 @@
 <script>
 const app = $('#app');
 let P = JSON.parse(sessionStorage.getItem('quiz.player') || 'null');
-let TITLE = 'Quiz', V = null, sending = false;
+let TITLE = 'Quiz', V = null, sending = false, mine = null;
 
 function save(p) { P = p; p ? sessionStorage.setItem('quiz.player', JSON.stringify(p)) : sessionStorage.removeItem('quiz.player'); }
 function setBg(cls) { document.body.className = cls; }
@@ -126,6 +126,9 @@ function live() {
 function onView(v) {
   if (v.phase === 'gone' || v.phase === 'unknown') { save(null); return pinScreen(v.phase === 'gone' ? 'That game has ended. Enter a new PIN to play again.' : ''); }
   if (v.phase === 'kicked') { save(null); return pinScreen('The host removed you from the game.'); }
+  // an update sent before our answer reached the server must not bring the buttons back
+  if (v.phase === 'lobby' || (mine && v.qi !== mine.qi)) mine = null;
+  if (v.phase === 'question' && !v.answered && mine && mine.qi === v.qi) v = { ...v, answered: true, choice: mine.choice };
   V = v; R[v.phase](v);
 }
 
@@ -207,9 +210,16 @@ async function answer(i) {
   sending = true;
   if (navigator.vibrate) navigator.vibrate(25);
   const qi = V.qi;
+  mine = { qi, choice: i };
   R.question({ ...V, answered: true, choice: i });
   V = { ...V, answered: true, choice: i };
-  try { await api('/api/answer', { pin: P.pin, token: P.token, qi, choice: i }); } catch {}
+  // retry through a patchy connection; the server ignores repeats, so this can't double-count
+  for (let tries = 0; tries < 5; tries++) {
+    try { const r = await api('/api/answer', { pin: P.pin, token: P.token, qi, choice: i }); if (r && 'ok' in r) break; }
+    catch (e) { if (/not in this game/i.test(e.message)) break; }
+    if (!V || V.phase !== 'question' || V.qi !== qi) break;
+    await sleep(400);
+  }
   sending = false;
 }
 
